@@ -1,16 +1,14 @@
-function getASCII(char) {
-    if (char.length !== 1) {
-        throw new Error("Input must be a single character.");
+function getASCIIValue(character) {
+    let lengthOfInput = character.length;
+    if (lengthOfInput == 1) {
+        let asciiValue = character.charCodeAt(0);
+        return asciiValue;
+
+    } else {
+        return "false pls input a proper single charater";
     }
-    return char.charCodeAt(0);
 }
 
-// Example Usage:
-try {
-    console.log(getASCII('a')); // Output: 97
-    // console.log(getASCII('AB')); // Should throw error
-} catch (error) {
-    console.error(error.message);
-}
-
-module.exports = getASCII;
+let input = 'a';
+let result = getASCIIValue(input);
+console.log(result);
