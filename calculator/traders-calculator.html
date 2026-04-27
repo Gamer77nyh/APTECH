@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETCHERO TRADE CALC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff88;
+    --green-dim: #00cc6a;
+    --green-glow: rgba(0,255,136,0.15);
+    --amber: #ffb347;
+    --red: #ff4d6d;
+    --bg: #030a06;
+    --bg2: #07140d;
+    --bg3: #0d1f14;
+    --border: rgba(0,255,136,0.18);
+    --text: #c8ffd8;
+    --text-dim: #527a60;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Orbitron', sans-serif;
+    --body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,136,0.012) 2px,
+      rgba(0,255,136,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Grid bg */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 32px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 50%;
+    transform: translateX(-50%);
+    width: 200px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--green);
+    text-shadow: 0 0 20px var(--green);
+    margin-bottom: 6px;
+    animation: flicker 8s infinite;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(20px, 5vw, 32px);
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0,255,136,0.4);
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-top: 6px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 9px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    white-space: nowrap;
+  }
+
+  .tab:hover {
+    color: var(--green);
+    border-color: var(--green-dim);
+    background: var(--green-glow);
+  }
+
+  .tab.active {
+    color: var(--bg);
+    background: var(--green);
+    border-color: var(--green);
+    font-weight: 700;
+    text-shadow: none;
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* PANELS */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* CARD */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  /* INPUTS GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  @media (max-width: 600px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 420px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  input, select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    transition: all 0.2s;
+    border-radius: 2px;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.05);
+    box-shadow: 0 0 0 2px rgba(0,255,136,0.1);
+  }
+
+  select option { background: var(--bg3); }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 13px 28px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    margin-top: 20px;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  .btn-primary:hover {
+    background: #fff;
+    box-shadow: 0 0 30px rgba(0,255,136,0.6);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    clip-path: none;
+    padding: 10px 18px;
+    font-size: 10px;
+    margin-top: 0;
+  }
+
+  .btn-secondary:hover { color: var(--green); border-color: var(--green); }
+
+  /* RESULTS */
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .result-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .result-box.highlight {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.06);
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+  }
+
+  .result-box.danger { border-color: var(--red); background: rgba(255,77,109,0.06); }
+  .result-box.warn { border-color: var(--amber); background: rgba(255,179,71,0.06); }
+
+  .result-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .result-value {
+    font-family: var(--display);
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    transition: all 0.4s;
+  }
+
+  .result-box.danger .result-value { color: var(--red); }
+  .result-box.warn .result-value { color: var(--amber); }
+
+  .result-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* TRADE DIRECTION TOGGLE */
+  .direction-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dir-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .dir-btn.buy.active { background: rgba(0,255,136,0.15); border-color: var(--green); color: var(--green); }
+  .dir-btn.sell.active { background: rgba(255,77,109,0.15); border-color: var(--red); color: var(--red); }
+  .dir-btn:hover { opacity: 0.8; }
+
+  /* INFO TAG */
+  .info-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 14px;
+  }
+
+  .info-tag span { color: var(--green); }
+
+  /* COMPOUND TABLE */
+  .compound-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 16px;
+  }
+
+  .compound-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg3);
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compound-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(0,255,136,0.06);
+    color: var(--text);
+  }
+
+  .compound-table tr:hover td { background: rgba(0,255,136,0.04); }
+  .compound-table td.green { color: var(--green); }
+  .compound-table td.amber { color: var(--amber); }
+
+  /* STATUS BAR */
+  .status-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 100;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes flicker {
+    0%, 95%, 100% { opacity: 1; }
+    96% { opacity: 0.7; }
+    97% { opacity: 1; }
+    98% { opacity: 0.5; }
+    99% { opacity: 1; }
+  }
+
+  /* RANGE SLIDER */
+  input[type=range] {
+    -webkit-appearance: none;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    height: 6px;
+    border-radius: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    cursor: pointer;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+
+  /* COPY FLASH */
+  @keyframes copyFlash {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; background: rgba(0,255,136,0.2); }
+    100% { opacity: 1; }
+  }
+
+  .copy-flash { animation: copyFlash 0.4s ease; }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="logo">▸ ETCHERO</div>
+    <h1>TRADE CALCULATOR</h1>
+    <div class="subtitle">FOREX · CRYPTO · STOCKS · FUTURES</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('position')">POSITION SIZE</div>
+    <div class="tab" onclick="switchTab('rr')">RISK / REWARD</div>
+    <div class="tab" onclick="switchTab('pnl')">P&amp;L</div>
+    <div class="tab" onclick="switchTab('pip')">PIP VALUE</div>
+    <div class="tab" onclick="switchTab('compound')">COMPOUND</div>
+  </div>
+
+  <!-- POSITION SIZE -->
+  <div id="panel-position" class="panel active">
+    <div class="card">
+      <div class="card-title">▸ POSITION SIZE CALCULATOR</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Account Balance ($)</label>
+          <input type="number" id="ps-balance" value="10000" min="0" step="100">
+        </div>
+        <div class="field">
+          <label>Risk (%)</label>
+          <input type="number" id="ps-risk" value="1" min="0.1" max="100" step="0.1">
+        </div>
+        <div class="field">
+          <label>Stop Loss (Pips)</label>
+          <input type="number" id="ps-slpips" value="20" min="1">
+        </div>
+        <div class="field">
+          <label>Pip Value (Per Std Lot)</label>
+          <input type="number" id="ps-pipval" value="10" min="0.01" step="0.01">
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <label style="margin-bottom:8px; display:block;">Risk Percentage: <span id="risk-display" style="color:var(--green)">1%</span></label>
+        <input type="range" id="ps-risk-range" min="0.1" max="5" step="0.1" value="1" oninput="syncRisk(this.value)">
+      </div>
+
+      <button class="btn btn-primary" onclick="calcPosition()">CALCULATE POSITION</button>
+
+      <div class="result-grid" id="ps-results" style="display:none">
+        <div class="result-box highlight">
+          <div class="result-label">Risk Amount</div>
+          <div class="result-value" id="ps-risk-amount">—</div>
+          <div class="result-sub">USD at risk</div>
+        </div>
+        <div class="result-box highlight">
+          <div class="result-label">Lot Size</div>
+          <div class="result-value" id="ps-lots">—</div>
+          <div class="result-sub">standard lots</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Mini Lots</div>
+          <div class="result-value" id="ps-mini">—</div>
+          <div class="result-sub">× 10,000 units</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Micro Lots</div>
+          <div class="result-value" id="ps-micro">—</div>
+          <div class="result-sub">× 1,000 units</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Units</div>
+          <div class="result-value" id="ps-units">—</div>
+          <div class="result-sub">total units</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RISK / REWARD -->
+  <div id="panel-rr" class="panel">
+    <div class="card">
+      <div class="card-title">▸ RISK / REWARD CALCULATOR</div>
+
+      <div style="margin-bottom:16px">
+        <label style="margin-bottom:8px; display:block">Trade Direction</label>
+        <div class="direction-toggle">
+          <div class="dir-btn buy active" id="dir-buy" onclick="setDirection('buy')">▲ BUY</div>
+          <div class="dir-btn sell" id="dir-sell" onclick="setDirection('sell')">▼ SELL</div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="field">
+          <label>Entry Price</label>
+          <input type="number" id="rr-entry" value="1.10000" step="0.00001">
+        </div>
+        <div class="field">
+          <label>Stop Loss</label>
+          <input type="number" id="rr-sl" value="1.09800" step="0.00001">
+        </div>
+        <div class="field">
+          <label>Take Profit</label>
+          <input type="number" id="rr-tp" value="1.10400" step="0.00001">
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px">
+        <div class="field">
+          <label>Win Rate (%)</label>
+          <input type="number" id="rr-winrate" value="50" min="1" max="99">
+        </div>
+        <div class="field">
+          <label>Account Balance ($)</label>
+          <input type="number" id="rr-balance" value="10000" step="100">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="calcRR()">ANALYZE TRADE</button>
+
+      <div class="result-grid" id="rr-results" style="display:none">
+        <div class="result-box highlight">
+          <div class="result-label">R:R Ratio</div>
+          <div class="result-value" id="rr-ratio">—</div>
+          <div class="result-sub">reward per 1 risk</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Risk Pips</div>
+          <div class="result-value" id="rr-risk-pips">—</div>
+          <div class="result-sub">pips to SL</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Reward Pips</div>
+          <div class="result-value" id="rr-reward-pips">—</div>
+          <div class="result-sub">pips to TP</div>
+        </div>
+        <div class="result-box" id="rr-ev-box">
+          <div class="result-label">Expected Value</div>
+          <div class="result-value" id="rr-ev">—</div>
+          <div class="result-sub">per $1 risked</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Min Win Rate</div>
+          <div class="result-value" id="rr-min-wr">—</div>
+          <div class="result-sub">to break even</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P&L -->
+  <div id="panel-pnl" class="panel">
+    <div class="card">
+      <div class="card-title">▸ PROFIT &amp; LOSS CALCULATOR</div>
+
+      <div style="margin-bottom:16px">
+        <label style="margin-bottom:8px; display:block">Trade Direction</label>
+        <div class="direction-toggle">
+          <div class="dir-btn buy active" id="pnl-dir-buy" onclick="setPnlDirection('buy')">▲ LONG</div>
+          <div class="dir-btn sell" id="pnl-dir-sell" onclick="setPnlDirection('sell')">▼ SHORT</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Entry Price</label>
+          <input type="number" id="pnl-entry" value="1.10000" step="0.00001">
+        </div>
+        <div class="field">
+          <label>Exit Price</label>
+          <input type="number" id="pnl-exit" value="1.10300" step="0.00001">
+        </div>
+        <div class="field">
+          <label>Lot Size</label>
+          <input type="number" id="pnl-lots" value="0.1" min="0.01" step="0.01">
+        </div>
+        <div class="field">
+          <label>Pip Value (per lot)</label>
+          <input type="number" id="pnl-pipval" value="10" step="0.01">
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px">
+        <div class="field">
+          <label>Account Balance ($)</label>
+          <input type="number" id="pnl-balance" value="10000" step="100">
+        </div>
+        <div class="field">
+          <label>Instrument Type</label>
+          <select id="pnl-type" onchange="updatePipDigits()">
+            <option value="forex-major">Forex Major (5 dec)</option>
+            <option value="forex-jpy">Forex JPY (3 dec)</option>
+            <option value="crypto">Crypto</option>
+            <option value="indices">Indices</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="calcPnL()">CALCULATE P&amp;L</button>
+
+      <div class="result-grid" id="pnl-results" style="display:none">
+        <div class="result-box highlight" id="pnl-pips-box">
+          <div class="result-label">Pips</div>
+          <div class="result-value" id="pnl-pips">—</div>
+          <div class="result-sub">price movement</div>
+        </div>
+        <div class="result-box highlight" id="pnl-profit-box">
+          <div class="result-label">P&amp;L</div>
+          <div class="result-value" id="pnl-profit">—</div>
+          <div class="result-sub">USD</div>
+        </div>
+        <div class="result-box" id="pnl-pct-box">
+          <div class="result-label">Return %</div>
+          <div class="result-value" id="pnl-pct">—</div>
+          <div class="result-sub">of balance</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">New Balance</div>
+          <div class="result-value" id="pnl-new-balance">—</div>
+          <div class="result-sub">after trade</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIP VALUE -->
+  <div id="panel-pip" class="panel">
+    <div class="card">
+      <div class="card-title">▸ PIP VALUE CALCULATOR</div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Currency Pair</label>
+          <select id="pip-pair">
+            <optgroup label="Major Pairs">
+              <option value="EURUSD">EUR/USD</option>
+              <option value="GBPUSD">GBP/USD</option>
+              <option value="AUDUSD">AUD/USD</option>
+              <option value="NZDUSD">NZD/USD</option>
+              <option value="USDCHF">USD/CHF</option>
+              <option value="USDJPY">USD/JPY</option>
+              <option value="USDCAD">USD/CAD</option>
+            </optgroup>
+            <optgroup label="Cross Pairs">
+              <option value="EURGBP">EUR/GBP</option>
+              <option value="EURJPY">EUR/JPY</option>
+              <option value="GBPJPY">GBP/JPY</option>
+            </optgroup>
+            <optgroup label="Metals">
+              <option value="XAUUSD">XAU/USD (Gold)</option>
+              <option value="XAGUSD">XAG/USD (Silver)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label>Lot Size</label>
+          <select id="pip-lottype">
+            <option value="1">Standard (1.0)</option>
+            <option value="0.1" selected>Mini (0.1)</option>
+            <option value="0.01">Micro (0.01)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="field" id="pip-custom-field" style="display:none">
+          <label>Custom Lot Size</label>
+          <input type="number" id="pip-custom-lot" value="0.5" step="0.01" min="0.01">
+        </div>
+        <div class="field">
+          <label>Current Exchange Rate</label>
+          <input type="number" id="pip-rate" value="1.10000" step="0.00001">
+        </div>
+        <div class="field">
+          <label>Account Currency</label>
+          <select id="pip-acct-currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="NGN">NGN</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="calcPip()">CALCULATE PIP VALUE</button>
+
+      <div class="result-grid" id="pip-results" style="display:none">
+        <div class="result-box highlight">
+          <div class="result-label">Pip Value</div>
+          <div class="result-value" id="pip-val">—</div>
+          <div class="result-sub">per pip</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">10 Pips</div>
+          <div class="result-value" id="pip-10">—</div>
+          <div class="result-sub">USD</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">50 Pips</div>
+          <div class="result-value" id="pip-50">—</div>
+          <div class="result-sub">USD</div>
+        </div>
+        <div class="result-box">
+          <div class="result-label">100 Pips</div>
+          <div class="result-value" id="pip-100">—</div>
+          <div class="result-sub">USD</div>
+        </div>
+      </div>
+
+      <div class="info-tag">
+        ⚡ PIP SIZES: <span>Forex Major = 0.0001</span> | <span>JPY Pairs = 0.01</span> | <span>Gold = 0.01</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPOUND -->
+  <div id="panel-compound" class="panel">
+    <div class="card">
+      <div class="card-title">▸ COMPOUND GROWTH CALCULATOR</div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Starting Capital ($)</label>
+          <input type="number" id="cmp-start" value="1000" min="1" step="100">
+        </div>
+        <div class="field">
+          <label>Monthly Return (%)</label>
+          <input type="number" id="cmp-rate" value="5" min="0.1" step="0.1">
+        </div>
+        <div class="field">
+          <label>Number of Months</label>
+          <input type="number" id="cmp-months" value="12" min="1" max="120">
+        </div>
+        <div class="field">
+          <label>Monthly Deposit ($)</label>
+          <input type="number" id="cmp-deposit" value="0" min="0" step="50">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="calcCompound()">PROJECT GROWTH</button>
+
+      <div id="cmp-summary" style="display:none; margin-top:20px">
+        <div class="result-grid">
+          <div class="result-box highlight">
+            <div class="result-label">Final Balance</div>
+            <div class="result-value" id="cmp-final">—</div>
+            <div class="result-sub">USD</div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Total Profit</div>
+            <div class="result-value" id="cmp-profit">—</div>
+            <div class="result-sub">USD gained</div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">Total Deposited</div>
+            <div class="result-value" id="cmp-deposited">—</div>
+            <div class="result-sub">USD invested</div>
+          </div>
+          <div class="result-box">
+            <div class="result-label">ROI</div>
+            <div class="result-value" id="cmp-roi">—</div>
+            <div class="result-sub">return on investment</div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+          <div style="font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--text-dim)">GROWTH TABLE</div>
+          <button class="btn btn-secondary" onclick="exportTable()">EXPORT CSV</button>
+        </div>
+
+        <div style="overflow-x:auto; max-height:320px; overflow-y:auto">
+          <table class="compound-table" id="cmp-table">
+            <thead>
+              <tr>
+                <th>MONTH</th>
+                <th>BALANCE</th>
+                <th>PROFIT</th>
+                <th>DEPOSITED</th>
+                <th>GAIN %</th>
+              </tr>
+            </thead>
+            <tbody id="cmp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span>ETCHERO TRADE CALC v1.0</span>
+  <span style="color:var(--green)" id="status-time">--:--:--</span>
+  <span style="margin-left:auto; color:rgba(0,255,136,0.3)">ALL CALCULATIONS FOR EDUCATIONAL USE ONLY</span>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let rrDirection = 'buy';
+let pnlDirection = 'buy';
+let compoundData = [];
+
+// ─── TAB SWITCH ──────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ─── CLOCK ───────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('status-time').textContent =
+    now.toTimeString().slice(0, 8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── RISK SLIDER SYNC ────────────────────────────────────
+function syncRisk(val) {
+  document.getElementById('ps-risk').value = val;
+  document.getElementById('risk-display').textContent = parseFloat(val).toFixed(1) + '%';
+}
+
+document.getElementById('ps-risk').addEventListener('input', function() {
+  const v = Math.min(5, Math.max(0.1, this.value));
+  document.getElementById('ps-risk-range').value = v;
+  document.getElementById('risk-display').textContent = parseFloat(v).toFixed(1) + '%';
+});
+
+// ─── FORMAT HELPERS ──────────────────────────────────────
+function fmt(n, dec = 2) {
+  if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  return n.toFixed(dec);
+}
+
+function fmtCurrency(n) {
+  return (n >= 0 ? '+' : '') + '$' + fmt(n);
+}
+
+function animateValue(el, val) {
+  el.style.transform = 'scale(0.8)';
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = val;
+    el.style.transform = 'scale(1)';
+    el.style.opacity = '1';
+    el.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+  }, 150);
+}
+
+// ─── POSITION SIZE ───────────────────────────────────────
+function calcPosition() {
+  const balance = parseFloat(document.getElementById('ps-balance').value) || 0;
+  const risk = parseFloat(document.getElementById('ps-risk').value) || 0;
+  const slPips = parseFloat(document.getElementById('ps-slpips').value) || 0;
+  const pipVal = parseFloat(document.getElementById('ps-pipval').value) || 0;
+
+  if (!balance || !risk || !slPips || !pipVal) return alert('Fill all fields!');
+
+  const riskAmt = balance * (risk / 100);
+  const lots = riskAmt / (slPips * pipVal);
+  const mini = lots * 10;
+  const micro = lots * 100;
+  const units = lots * 100000;
+
+  const res = document.getElementById('ps-results');
+  res.style.display = 'grid';
+
+  animateValue(document.getElementById('ps-risk-amount'), '$' + fmt(riskAmt));
+  animateValue(document.getElementById('ps-lots'), fmt(lots, 3));
+  animateValue(document.getElementById('ps-mini'), fmt(mini, 2));
+  animateValue(document.getElementById('ps-micro'), fmt(micro, 1));
+  animateValue(document.getElementById('ps-units'), fmt(units, 0));
+}
+
+// ─── RISK / REWARD ───────────────────────────────────────
+function setDirection(d) {
+  rrDirection = d;
+  document.getElementById('dir-buy').classList.toggle('active', d === 'buy');
+  document.getElementById('dir-sell').classList.toggle('active', d === 'sell');
+}
+
+function calcRR() {
+  const entry = parseFloat(document.getElementById('rr-entry').value);
+  const sl = parseFloat(document.getElementById('rr-sl').value);
+  const tp = parseFloat(document.getElementById('rr-tp').value);
+  const wr = parseFloat(document.getElementById('rr-winrate').value) / 100;
+
+  if (!entry || !sl || !tp) return alert('Fill all price fields!');
+
+  const multiplier = 10000; // for forex major (adjust for JPY)
+  let riskPips, rewardPips;
+
+  if (rrDirection === 'buy') {
+    riskPips = Math.abs((entry - sl) * multiplier);
+    rewardPips = Math.abs((tp - entry) * multiplier);
+  } else {
+    riskPips = Math.abs((sl - entry) * multiplier);
+    rewardPips = Math.abs((entry - tp) * multiplier);
+  }
+
+  const ratio = rewardPips / riskPips;
+  const ev = (wr * ratio) - (1 - wr);
+  const minWR = (1 / (1 + ratio)) * 100;
+
+  const res = document.getElementById('rr-results');
+  res.style.display = 'grid';
+
+  animateValue(document.getElementById('rr-ratio'), '1:' + fmt(ratio, 2));
+  animateValue(document.getElementById('rr-risk-pips'), fmt(riskPips, 1));
+  animateValue(document.getElementById('rr-reward-pips'), fmt(rewardPips, 1));
+  animateValue(document.getElementById('rr-ev'), (ev >= 0 ? '+' : '') + fmt(ev, 3));
+  animateValue(document.getElementById('rr-min-wr'), fmt(minWR, 1) + '%');
+
+  const evBox = document.getElementById('rr-ev-box');
+  evBox.className = 'result-box ' + (ev > 0 ? 'highlight' : ev < 0 ? 'danger' : 'warn');
+  document.getElementById('rr-ev').style.color = ev > 0 ? 'var(--green)' : ev < 0 ? 'var(--red)' : 'var(--amber)';
+}
+
+// ─── P&L ─────────────────────────────────────────────────
+function setPnlDirection(d) {
+  pnlDirection = d;
+  document.getElementById('pnl-dir-buy').classList.toggle('active', d === 'buy');
+  document.getElementById('pnl-dir-sell').classList.toggle('active', d === 'sell');
+}
+
+function updatePipDigits() {
+  const type = document.getElementById('pnl-type').value;
+  const pipValInput = document.getElementById('pnl-pipval');
+  if (type === 'forex-major') pipValInput.value = 10;
+  else if (type === 'forex-jpy') pipValInput.value = 9.09;
+  else if (type === 'crypto') pipValInput.value = 1;
+  else if (type === 'indices') pipValInput.value = 1;
+}
+
+function calcPnL() {
+  const entry = parseFloat(document.getElementById('pnl-entry').value);
+  const exit = parseFloat(document.getElementById('pnl-exit').value);
+  const lots = parseFloat(document.getElementById('pnl-lots').value);
+  const pipVal = parseFloat(document.getElementById('pnl-pipval').value);
+  const balance = parseFloat(document.getElementById('pnl-balance').value) || 10000;
+  const type = document.getElementById('pnl-type').value;
+
+  const pipSize = (type === 'forex-jpy') ? 0.01 : 0.0001;
+  const mult = (type === 'forex-major' || type === 'forex-jpy') ? 1 : 1;
+
+  let priceDiff = exit - entry;
+  if (pnlDirection === 'sell') priceDiff = -priceDiff;
+
+  const pips = priceDiff / pipSize;
+  const profit = pips * pipVal * lots;
+  const pct = (profit / balance) * 100;
+  const newBal = balance + profit;
+
+  const res = document.getElementById('pnl-results');
+  res.style.display = 'grid';
+
+  const isGain = profit >= 0;
+  const profitBox = document.getElementById('pnl-profit-box');
+  const pctBox = document.getElementById('pnl-pct-box');
+  const pipsBox = document.getElementById('pnl-pips-box');
+
+  profitBox.className = 'result-box ' + (isGain ? 'highlight' : 'danger');
+  pctBox.className = 'result-box ' + (isGain ? '' : 'danger');
+  pipsBox.className = 'result-box ' + (isGain ? '' : 'danger');
+
+  animateValue(document.getElementById('pnl-pips'), (pips >= 0 ? '+' : '') + fmt(pips, 1));
+  animateValue(document.getElementById('pnl-profit'), fmtCurrency(profit));
+  animateValue(document.getElementById('pnl-pct'), (pct >= 0 ? '+' : '') + fmt(pct, 2) + '%');
+  animateValue(document.getElementById('pnl-new-balance'), '$' + fmt(newBal));
+
+  document.getElementById('pnl-profit').style.color = isGain ? 'var(--green)' : 'var(--red)';
+  document.getElementById('pnl-pct').style.color = isGain ? 'var(--green)' : 'var(--red)';
+}
+
+// ─── PIP VALUE ────────────────────────────────────────────
+document.getElementById('pip-lottype').addEventListener('change', function() {
+  document.getElementById('pip-custom-field').style.display =
+    this.value === 'custom' ? 'flex' : 'none';
+});
+
+function calcPip() {
+  const pair = document.getElementById('pip-pair').value;
+  const lotTypeVal = document.getElementById('pip-lottype').value;
+  const customLot = parseFloat(document.getElementById('pip-custom-lot').value) || 1;
+  const lots = lotTypeVal === 'custom' ? customLot : parseFloat(lotTypeVal);
+  const rate = parseFloat(document.getElementById('pip-rate').value) || 1;
+
+  const jpyPairs = ['USDJPY', 'EURJPY', 'GBPJPY'];
+  const isJpy = jpyPairs.includes(pair);
+  const isGold = pair === 'XAUUSD';
+  const isSilver = pair === 'XAGUSD';
+
+  let pipSize, contractSize, pipValue;
+
+  if (isGold) {
+    pipSize = 0.01;
+    contractSize = 100; // oz
+    pipValue = pipSize * contractSize * lots;
+  } else if (isSilver) {
+    pipSize = 0.001;
+    contractSize = 5000;
+    pipValue = pipSize * contractSize * lots;
+  } else if (isJpy) {
+    pipSize = 0.01;
+    contractSize = 100000;
+    pipValue = (pipSize / rate) * contractSize * lots;
+  } else {
+    pipSize = 0.0001;
+    contractSize = 100000;
+    pipValue = pipSize * contractSize * lots;
+  }
+
+  const res = document.getElementById('pip-results');
+  res.style.display = 'grid';
+
+  animateValue(document.getElementById('pip-val'), '$' + fmt(pipValue, 4));
+  animateValue(document.getElementById('pip-10'), '$' + fmt(pipValue * 10, 2));
+  animateValue(document.getElementById('pip-50'), '$' + fmt(pipValue * 50, 2));
+  animateValue(document.getElementById('pip-100'), '$' + fmt(pipValue * 100, 2));
+}
+
+// ─── COMPOUND ────────────────────────────────────────────
+function calcCompound() {
+  const start = parseFloat(document.getElementById('cmp-start').value) || 0;
+  const monthlyRate = parseFloat(document.getElementById('cmp-rate').value) / 100;
+  const months = parseInt(document.getElementById('cmp-months').value) || 0;
+  const deposit = parseFloat(document.getElementById('cmp-deposit').value) || 0;
+
+  if (!start || !months) return alert('Fill all fields!');
+
+  compoundData = [];
+  let balance = start;
+  let totalDeposited = start;
+
+  for (let m = 1; m <= months; m++) {
+    const profit = balance * monthlyRate;
+    balance = balance + profit + deposit;
+    if (m > 1) totalDeposited += deposit;
+
+    compoundData.push({
+      month: m,
+      balance,
+      profit,
+      deposited: totalDeposited,
+      gain: ((balance - totalDeposited) / totalDeposited) * 100
+    });
+  }
+
+  const finalBalance = compoundData[compoundData.length - 1].balance;
+  const totalProfit = finalBalance - totalDeposited;
+  const roi = (totalProfit / start) * 100;
+
+  document.getElementById('cmp-summary').style.display = 'block';
+
+  animateValue(document.getElementById('cmp-final'), '$' + fmt(finalBalance));
+  animateValue(document.getElementById('cmp-profit'), '+$' + fmt(totalProfit));
+  animateValue(document.getElementById('cmp-deposited'), '$' + fmt(totalDeposited));
+  animateValue(document.getElementById('cmp-roi'), '+' + fmt(roi, 1) + '%');
+
+  // Build table
+  const tbody = document.getElementById('cmp-tbody');
+  tbody.innerHTML = '';
+  compoundData.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    const gainClass = row.gain > 100 ? 'green' : row.gain > 50 ? 'amber' : '';
+    tr.innerHTML = `
+      <td>${row.month}</td>
+      <td class="green">$${fmt(row.balance)}</td>
+      <td>$${fmt(row.profit)}</td>
+      <td>$${fmt(row.deposited)}</td>
+      <td class="${gainClass}">${fmt(row.gain, 1)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportTable() {
+  if (!compoundData.length) return;
+  let csv = 'Month,Balance,Monthly Profit,Total Deposited,Gain %\n';
+  compoundData.forEach(r => {
+    csv += `${r.month},${r.balance.toFixed(2)},${r.profit.toFixed(2)},${r.deposited.toFixed(2)},${r.gain.toFixed(2)}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'etchero_compound.csv';
+  a.click();
+}
+
+// ─── INITIAL CALCS ───────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Nothing auto-runs — user triggers each calc
+});
+</script>
+</body>
+</html>

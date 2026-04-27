@@ -1,0 +1,212 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.calculator {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    width: 100%;
+    max-width: 400px;
+    padding: 24px;
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.display-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ebf0 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) inset;
+    overflow: hidden;
+}
+
+.previous-operand {
+    color: #64748b;
+    font-size: 18px;
+    font-weight: 400;
+    min-height: 24px;
+    word-wrap: break-word;
+    word-break: break-all;
+    text-align: right;
+    width: 100%;
+}
+
+.current-operand {
+    color: #1e293b;
+    font-size: 42px;
+    font-weight: 600;
+    min-height: 50px;
+    word-wrap: break-word;
+    word-break: break-all;
+    text-align: right;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.btn {
+    border: none;
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: 500;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    user-select: none;
+}
+
+.btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Number buttons */
+.btn-number {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    color: #1e293b;
+}
+
+.btn-number:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Function buttons (AC, DEL, %) */
+.btn-function {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    color: #475569;
+    font-weight: 600;
+}
+
+.btn-function:hover {
+    background: linear-gradient(135deg, #cbd5e1 0%, #b0bac9 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Operator buttons */
+.btn-operator {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.btn-operator:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #65408b 100%);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-operator:active {
+    background: linear-gradient(135deg, #4a5dc5 0%, #54367a 100%);
+}
+
+/* Equals button */
+.btn-equals {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 28px;
+}
+
+.btn-equals:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.btn-equals:active {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+}
+
+/* Zero button spans 2 columns */
+.btn-zero {
+    grid-column: span 2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .calculator {
+        padding: 20px;
+    }
+    
+    .btn {
+        padding: 20px;
+        font-size: 20px;
+    }
+    
+    .current-operand {
+        font-size: 36px;
+    }
+    
+    .previous-operand {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 360px) {
+    .btn {
+        padding: 16px;
+        font-size: 18px;
+    }
+    
+    .current-operand {
+        font-size: 30px;
+    }
+    
+    .buttons {
+        gap: 8px;
+    }
+}
+
+/* Keyboard press animation */
+.btn.pressed {
+    animation: press 0.1s ease;
+}
+
+@keyframes press {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
